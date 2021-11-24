@@ -10,6 +10,12 @@ import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
 # For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
 
 import os
+# for dirname, _, filenames in os.walk('/kaggle/input'):
+#     for filename in filenames:
+#         print(os.path.join(dirname, filename))
+
+# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using "Save & Run All" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session
 
 # %% [code] {"execution":{"iopub.status.busy":"2021-11-18T22:00:34.118378Z","iopub.execute_input":"2021-11-18T22:00:34.118643Z","iopub.status.idle":"2021-11-18T22:00:34.123715Z","shell.execute_reply.started":"2021-11-18T22:00:34.118616Z","shell.execute_reply":"2021-11-18T22:00:34.122576Z"}}
 import matplotlib
@@ -41,18 +47,43 @@ def to_coord(index, height):
     return row, col
 
 
-def to_img(annotation, width, height):
+def to_img(annotation, height, width):
     starts, runs = to_runs(annotation)
-    # img = np.full((height, width), np.nan)
     img = np.zeros((height, width))
 
     for start, run in zip(starts, runs):
-        coords = [to_coord(i - 1, height) for i in range(start, start + run)]
-
-        for c in coords:
-            img[c] = 1
+        idxs = range(start - 1, start - 1 + run)
+        img[np.unravel_index(idxs, img.shape)] = 1
 
     return img
+
+
+def find_runs(idxs, offset=0):
+    """
+    Parameters
+    ----------
+    idxs : list of int
+
+    Examples
+    --------
+    > idxs = [2, 3, 4, 7, 8]
+    > find_runs(idxs)
+    numpy.array([[2, 3], [7, 2]])
+    """
+    return np.array([[1, 2], [4, 5]])
+
+
+def to_runs(img: np.ndarray):
+    height, width = img.shape
+
+    row_runs = [
+        find_runs(row.nonzero()[0], row_num * width + 1)
+        for row_num, row in enumerate(img)
+    ]
+    runs = np.concatenate(row_runs)
+
+    return runs
+
 
 # %% [code] {"execution":{"iopub.status.busy":"2021-11-18T22:10:11.359820Z","iopub.execute_input":"2021-11-18T22:10:11.360113Z","iopub.status.idle":"2021-11-18T22:10:11.745870Z","shell.execute_reply.started":"2021-11-18T22:10:11.360081Z","shell.execute_reply":"2021-11-18T22:10:11.744972Z"}}
 train_df = pd.read_csv('/kaggle/input/../input/sartorius-cell-instance-segmentation/train.csv')
@@ -94,23 +125,3 @@ plt.show()
 
 # %% [code]
 
-
-# %% [code]
-
-
-# %% [code]
-
-
-# %% [code]
-
-
-# %% [code]
-
-
-# %% [code]
-
-
-# %% [code]
-
-
-# %% [code]
